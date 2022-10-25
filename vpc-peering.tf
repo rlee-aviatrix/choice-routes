@@ -81,4 +81,10 @@ data "aws_route_table" "rt" {
 }
 
 
+resource "aws_route" "r" {
+  for_each = local.ron2
+  route_table_id = each.value.route_table_id
+  destination_cidr_block = each.value.destination_cidr_block
+  vpc_peering_connection_id = local.cidr_to_pcx_map[each.value.cidr_string]
 
+}
