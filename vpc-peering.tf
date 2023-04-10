@@ -22,13 +22,13 @@ locals {
   }
 
   rt_to_cidr_map = {
-    for rt in local.list_of_rts:
+    for rt in local.list_of_rts :
     # rt => data.aws_route_table.rt[rt].vpc_id
-        rt => local.vpc_id_to_cidr_map[data.aws_route_table.rt[rt].vpc_id]
+    rt => local.vpc_id_to_cidr_map[data.aws_route_table.rt[rt].vpc_id]
   }
 
   vpc_id_to_cidr_map = {
-    for x in var.vpcs: 
+    for x in var.vpcs :
     module.vpc[x.vpc_name].vpc_id => x.vpc_cidr
 
   }
@@ -40,22 +40,22 @@ locals {
   ])
 
   ron = [
-   for x in setproduct(local.list_of_rts,local.list_of_vpcs):
-   {
-     route_table_id = x[0]
-     destination_cidr_block = x[1]
-     source_cidr_block = local.rt_to_cidr_map[x[0]]
-     
-   }
+    for x in setproduct(local.list_of_rts, local.list_of_vpcs) :
+    {
+      route_table_id         = x[0]
+      destination_cidr_block = x[1]
+      source_cidr_block      = local.rt_to_cidr_map[x[0]]
+
+    }
   ]
 
   ron2 = {
-    for x in setproduct(local.list_of_rts,local.list_of_vpcs):
-    "${x[0]}:${x[1]}" =>    {
-     route_table_id = x[0]
-     destination_cidr_block = x[1]
-     source_cidr_block = local.rt_to_cidr_map[x[0]]
-     cidr_string = "${local.rt_to_cidr_map[x[0]]}:${x[1]}"
+    for x in setproduct(local.list_of_rts, local.list_of_vpcs) :
+    "${x[0]}:${x[1]}" => {
+      route_table_id         = x[0]
+      destination_cidr_block = x[1]
+      source_cidr_block      = local.rt_to_cidr_map[x[0]]
+      cidr_string            = "${local.rt_to_cidr_map[x[0]]}:${x[1]}"
     }
     if local.rt_to_cidr_map[x[0]] != x[1]
   }
@@ -76,15 +76,15 @@ resource "aws_vpc_peering_connection" "peering" {
 }
 
 data "aws_route_table" "rt" {
-  for_each = toset(local.list_of_rts)
+  for_each       = toset(local.list_of_rts)
   route_table_id = each.key
 }
 
 
 resource "aws_route" "r" {
-  for_each = local.ron2
-  route_table_id = each.value.route_table_id
-  destination_cidr_block = each.value.destination_cidr_block
+  for_each                  = local.ron2
+  route_table_id            = each.value.route_table_id
+  destination_cidr_block    = each.value.destination_cidr_block
   vpc_peering_connection_id = local.cidr_to_pcx_map[each.value.cidr_string]
 
 }
